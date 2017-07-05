@@ -1,0 +1,229 @@
+float4x4 World;
+float4x4 View;
+float4x4 Projection;
+float3 LightDirection;
+float3 CameraPosition;
+float MaxHeight;
+float CloudRotation;
+float CloudHeight;
+float normalStrength = 8;
+
+texture heightMap;
+sampler heightMapSampler = sampler_state
+{
+	texture = <heightMap>;
+	MinFilter = POINT;
+	MagFilter = POINT;
+	MipFilter = POINT;
+	AddressU = Wrap;
+	AddressV = Wrap;
+};
+texture ColorMap;
+sampler ColorMapSampler = sampler_state
+{
+	texture = <ColorMap>;
+	MinFilter = Anisotropic; //minification factor
+	MagFilter = Anisotropic; //magnifiaction factor
+	MipFilter = Linear;		//mip-mapping
+	MaxAnisotropy = 16;
+	AddressU = Wrap;		//address mode for U coordinates
+	AddressV = Wrap;		//address mode for V coordinates
+};
+texture NightMap;
+sampler NightMapSampler = sampler_state
+{
+	texture = <NightMap>;
+	MinFilter = Anisotropic; //minification factor
+	MagFilter = Anisotropic; //magnifiaction factor
+	MipFilter = Linear;		//mip-mapping	
+	AddressU = Wrap;		//address mode for U coordinates
+	AddressV = Wrap;		//address mode for V coordinates
+};
+texture ReflectionMap;				//reflection
+sampler ReflectionMapSampler = sampler_state
+{
+	texture = <ReflectionMap>;
+	MinFilter = Anisotropic; //minification factor
+	MagFilter = Anisotropic; //magnifiaction factor
+	MipFilter = Linear;		//mip-mapping
+	AddressU = Wrap;		//address mode for U coordinates
+	AddressV = Wrap;		//address mode for V coordinates
+};
+texture CloudMap;								//clouds
+sampler CloudMapSampler = sampler_state
+{
+	texture = <CloudMap>;
+	MinFilter = Anisotropic; //minification factor
+	MagFilter = Anisotropic; //magnifiaction factor
+	MipFilter = Linear;		//mip-mapping
+	MaxAnisotropy = 16;
+	AddressU = Wrap;		//address mode for U coordinates
+	AddressV = Wrap;		//address mode for V coordinates
+};
+
+struct VS_IN
+{
+	float4 Position : POSITION0;
+	float2 UV : TEXCOORD0;
+	float3 Normal : NORMAL0;
+	//float3 Tangent : TANGENT0;
+
+};
+struct VS_OUT
+{
+	float4 Position : POSITION0;
+	float2 UV : TEXCOORD0;
+	float3 Normal : TEXCOORD1;
+	float3 ViewDirection : TEXCOORD2;
+	float3 Light : TEXCOORD3;
+};
+
+float4 ComputeNormal(in float2 uv:TEXCOORD0) : COLOR
+{
+	float textureSize = 256.0f;
+	float texelSize = 1.0f / textureSize; //size of one texel;
+
+	float tl = abs(tex2Dlod(heightMapSampler, float4(uv + texelSize * float2(-1, -1), 0, 0)).x);   // top left
+	float  l = abs(tex2Dlod(heightMapSampler, float4(uv + texelSize * float2(-1,  0), 0, 0)).x);   // left
+	float bl = abs(tex2Dlod(heightMapSampler, float4(uv + texelSize * float2(-1,  1), 0, 0)).x);   // bottom left
+	float  t = abs(tex2Dlod(heightMapSampler, float4(uv + texelSize * float2(0, -1), 0, 0)).x);   // top
+	float  b = abs(tex2Dlod(heightMapSampler, float4(uv + texelSize * float2(0,  1), 0, 0)).x);   // bottom
+	float tr = abs(tex2Dlod(heightMapSampler, float4(uv + texelSize * float2(1, -1), 0, 0)).x);   // top right
+	float  r = abs(tex2Dlod(heightMapSampler, float4(uv + texelSize * float2(1,  0), 0, 0)).x);   // right
+	float br = abs(tex2Dlod(heightMapSampler, float4(uv + texelSize * float2(1,  1), 0, 0)).x);   // bottom right
+
+	// Compute dx using Sobel:
+	//           -1 0 1 
+	//           -2 0 2
+	//           -1 0 1
+	float dX = tr + 2 * r + br - tl - 2 * l - bl;
+
+	// Compute dy using Sobel:
+	//           -1 -2 -1 
+	//            0  0  0
+	//            1  2  1
+	float dY = bl + 2 * b + br - tl - 2 * t - tr;
+
+	// Build the normalized normal
+	float4 N = float4(normalize(float3(dX, 1.0f / normalStrength, dY)), 1.0f);
+
+	//convert (-1.0 , 1.0) to (0.0 , 1.0), if needed
+	return N * 0.5f + 0.5f;
+};
+
+VS_OUT VS_Color(VS_IN input)
+{
+	VS_OUT output = (VS_OUT)0;
+
+	float4 worldPosition = mul(input.Position, World);
+	float4x4 viewProjection = mul(View, Projection);	
+	
+	float h = tex2Dlod(heightMapSampler, float4(input.UV, 0, 0)).r * 0.025;
+	float4 Nn = mul(input.Normal, World);
+	float4 NewPos = worldPosition + Nn * h;	
+		
+	output.Position = mul(NewPos, viewProjection);
+	output.UV = input.UV;	
+	output.Normal = mul(input.Normal, World);		
+	output.ViewDirection = CameraPosition - input.Position;
+
+	return output;
+};
+
+VS_OUT VS_Shell(VS_IN input, uniform float radius)
+{
+	VS_OUT output = (VS_OUT)0;
+
+	float4x4 wvp = mul(World, mul(View, Projection));
+	float4 worldPosition = mul(input.Position, World);
+	float4x4 viewProjection = mul(View, Projection);
+
+	//output.Normal = mul(input.Normal, World);
+	output.Normal = ComputeNormal(input.UV);
+	output.Position = mul(input.Position, wvp) + (mul(radius, mul(input.Normal, wvp)));
+	output.UV = input.UV;
+	output.UV.x += CloudRotation;
+
+	return output;
+}	
+
+float4 PS_Color(VS_OUT input) : COLOR0
+{	
+	float4 color = tex2D(ColorMapSampler, input.UV);
+	float3 n = normalize(input.Normal);
+	float3 l = normalize(LightDirection);
+	float3 r = reflect(-l, n);
+	float3 v = normalize(input.ViewDirection);
+	float3 h = normalize(l + v);
+
+	float Diffuse = saturate(dot(n, l));
+	float Specular = saturate(pow(saturate(dot(r, v)), 100) * color);	
+
+	// Basic lighting
+	//float diffuse = saturate(dot(l, n));
+	float specBase = saturate(dot(reflect(v, n), l));
+
+	return color * Diffuse;
+}
+float4 PS_SURFACEONLY(VS_OUT input) : COLOR0
+{	
+	float3 color = tex2D(ColorMapSampler, input.UV);
+	float3 night = tex2D(NightMapSampler, input.UV);			
+
+	float3 n = normalize(input.Normal);
+	float3 l = normalize(LightDirection);
+	float3 r = reflect(-l, n);
+	float3 v = normalize(input.ViewDirection);
+	float3 h = normalize(l + v);
+
+	float Diffuse = saturate(dot(n, l));
+	float nDiffuse = saturate(dot(n, -l));
+	float Specular = saturate(pow(saturate(dot(r, v)), 100));
+	float4 reflection = tex2D(ReflectionMapSampler, input.UV);	
+
+	float3 output = 0.01
+		+ saturate(Diffuse) * color
+		+ saturate(nDiffuse) * night;		
+
+		return float4(output, 1);
+}
+float4 PS_CLOUDS(VS_OUT input) : COLOR0
+{
+	float3 color = tex2D(CloudMapSampler, input.UV);
+
+	float3 n = normalize(input.Normal);
+	float3 l = normalize(LightDirection);
+
+	float Diffuse = saturate(dot(n, l));
+
+	//red sunset clouds
+	float d1 = 0.1 - saturate(dot(l, n));
+	float d2 = 0.5 - saturate(dot(-l, n));
+
+	float3 output = 0
+		+ saturate(Diffuse) * color
+		+ saturate((color * (d1 * d2)) * float4(1, 0.5, 0.3, 1));
+
+	return float4(output, 1);
+}
+
+technique t0
+{
+	pass Surface
+	{
+		FILLMODE = WIREFRAME;
+		//CULLMODE = NONE;
+		ALPHABLENDENABLE = TRUE;
+		CULLMODE = NONE;
+		VertexShader = compile vs_3_0 VS_Color();
+		PixelShader = compile ps_3_0 PS_SURFACEONLY();
+	}
+	/*pass Clouds			
+    {        
+		ALPHABLENDENABLE = TRUE;
+        SRCBLEND = ONE;
+        DESTBLEND = ONE;
+        VertexShader = compile vs_3_0 VS_Shell(CloudHeight);
+        PixelShader = compile ps_3_0 PS_CLOUDS();
+	}*/
+}

@@ -1,0 +1,84 @@
+﻿
+using Microsoft.Xna.Framework;
+using System.Collections.Generic;
+
+namespace XNACube
+{
+    public class CubePrimitive : GeometricPrimitive
+    {
+        /// <summary>The original 6 corners of a cube</summary>
+        public List<Vector3> Corners = new List<Vector3>();
+        /// <summary>Creates a Cube</summary>
+        public CubePrimitive(float radius) : base()
+        {
+            CreateVertices(radius);
+            CreateIndices();
+        }
+        void CreateVertices(float radius)
+        {                        
+            AddVertex(new Vector3(-radius, -radius, -radius));
+            AddVertex(new Vector3(-radius, -radius, radius));
+            AddVertex(new Vector3(radius, -radius, radius));
+            AddVertex(new Vector3(radius, -radius, -radius));
+            AddVertex(new Vector3(-radius, radius, -radius));
+            AddVertex(new Vector3(-radius, radius, radius));
+            AddVertex(new Vector3(radius, radius, radius));
+            AddVertex(new Vector3(radius, radius, -radius));
+
+            foreach (Vector3 v in vertices)
+                Corners.Add(v);
+        }
+
+        void CreateIndices()
+        {                        
+            //bottom face            
+            AddIndex(0);
+            AddIndex(2);
+            AddIndex(3);
+
+            AddIndex(0);
+            AddIndex(1);
+            AddIndex(2);
+
+            //top face
+            AddIndex(4);
+            AddIndex(6);
+            AddIndex(5);
+            AddIndex(4);
+            AddIndex(7);
+            AddIndex(6);
+
+            //front face
+            AddIndex(5);
+            AddIndex(2);
+            AddIndex(1);
+            AddIndex(5);
+            AddIndex(6);
+            AddIndex(2);
+
+            //back face
+            AddIndex(0);
+            AddIndex(7);
+            AddIndex(4);
+            AddIndex(0);
+            AddIndex(3);
+            AddIndex(7);
+
+            //left face
+            AddIndex(0);
+            AddIndex(4);
+            AddIndex(1);
+            AddIndex(1);
+            AddIndex(4);
+            AddIndex(5);
+
+            //right face
+            AddIndex(2);
+            AddIndex(6);
+            AddIndex(3);
+            AddIndex(3);
+            AddIndex(6);
+            AddIndex(7);            
+        }
+    }
+}

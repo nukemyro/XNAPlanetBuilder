@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<XnaContent xmlns:Pipeline="Microsoft.Xna.Framework.Content.Pipeline">
+  <Asset Type="Pipeline:BuildItemCollection">
+    <BuildSuccessful>true</BuildSuccessful>
+    <Settings>
+      <TargetPlatform>Windows</TargetPlatform>
+      <TargetProfile>HiDef</TargetProfile>
+      <BuildConfiguration>Debug</BuildConfiguration>
+      <CompressContent>false</CompressContent>
+      <RootDirectory>C:\Users\mike.james\Documents\Visual Studio 2010\Projects\XNACube\XNACube\XNACubeContent\</RootDirectory>
+      <LoggerRootDirectory>C:\Users\mike.james\Documents\Visual Studio 2010\Projects\XNACube\XNACube\XNACube\</LoggerRootDirectory>
+      <IntermediateDirectory>C:\Users\mike.james\Documents\Visual Studio 2010\Projects\XNACube\XNACube\XNACubeContent\obj\x86\Debug\</IntermediateDirectory>
+      <OutputDirectory>C:\Users\mike.james\Documents\Visual Studio 2010\Projects\XNACube\XNACube\XNACube\bin\x86\Debug\Content\</OutputDirectory>
+    </Settings>
+    <Assemblies>
+      <Assembly>
+        <Key>C:\Windows\Microsoft.Net\assembly\GAC_32\Microsoft.Xna.Framework.Content.Pipeline\v4.0_4.0.0.0__6d5c3888ef60e27d\Microsoft.Xna.Framework.Content.Pipeline.dll</Key>
+        <Value>2010-07-13T16:54:56.9275837+01:00</Value>
+      </Assembly>
+    </Assemblies>
+  </Asset>
+</XnaContent>

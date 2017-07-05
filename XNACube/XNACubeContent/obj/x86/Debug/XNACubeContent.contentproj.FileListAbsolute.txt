@@ -1,0 +1,4 @@
+C:\Users\mike.james\Documents\Visual Studio 2010\Projects\XNACube\XNACube\XNACubeContent\obj\x86\Debug\ResolveAssemblyReference.cache
+C:\Users\myro60508\Desktop\XNACube\XNACube\XNACubeContent\obj\x86\Debug\XNACubeContent.contentprojResolveAssemblyReference.cache
+C:\Users\mercu\Desktop\XNACube\XNACube\XNACubeContent\obj\x86\Debug\XNACubeContent.contentprojResolveAssemblyReference.cache
+E:\Desktop\XNACube\XNACube\XNACubeContent\obj\x86\Debug\XNACubeContent.contentprojResolveAssemblyReference.cache
